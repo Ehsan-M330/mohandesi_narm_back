@@ -1,0 +1,96 @@
+{% extends 'base_generic.html' %} {% block content %}
+<div class="container mt-5">
+  <h1 class="text-center">Customer Dashboard</h1>
+
+  <!-- بخش انتخاب دسته‌بندی -->
+  <div class="row mt-4">
+    <div class="col-md-12 text-center">
+      <label for="category-select" class="form-label">Choose a category:</label>
+      <select id="category-select" class="form-select w-50 mx-auto">
+        <option value="" selected>All</option>
+        <option value="Pizza">Pizza</option>
+        <option value="Burger">Burger</option>
+        <option value="Desserts">Desserts</option>
+        <!-- دسته‌بندی‌های دیگر -->
+      </select>
+    </div>
+  </div>
+
+  <!-- بخش لیست غذاها -->
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <div id="foods-container" class="row g-4">
+        <!-- غذاها به صورت داینامیک اینجا نمایش داده می‌شوند -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const foodsContainer = document.getElementById("foods-container");
+  const categorySelect = document.getElementById("category-select");
+
+  // متد برای گرفتن داده‌ها از API
+  async function fetchFoods(category = "") {
+    try {
+      // ساخت URL API با توجه به دسته‌بندی
+      let url = "/api/foods/";
+      if (category) {
+        url += `?category=${category}`;
+      }
+
+      // درخواست به API
+      const response = await fetch(url, {
+        headers: {
+          Authorization: "Bearer YOUR_ACCESS_TOKEN", // توکن کاربر
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      const data = await response.json();
+      displayFoods(data); // نمایش غذاها در صفحه
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // متد برای نمایش داده‌ها در صفحه
+  function displayFoods(foods) {
+    foodsContainer.innerHTML = ""; // پاک کردن محتوا
+
+    if (foods.length === 0) {
+      foodsContainer.innerHTML = `<p class="text-center text-muted">No foods found.</p>`;
+      return;
+    }
+
+    foods.forEach((food) => {
+      const foodCard = document.createElement("div");
+      foodCard.classList.add("col-md-4");
+
+      foodCard.innerHTML = `
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">${food.name}</h5>
+                        <p class="card-text">${food.description}</p>
+                        <p class="text-muted">Rate: ${food.rate}</p>
+                    </div>
+                </div>
+            `;
+      foodsContainer.appendChild(foodCard);
+    });
+  }
+
+  // وقتی دسته‌بندی تغییر کرد، داده‌های جدید دریافت شود
+  categorySelect.addEventListener("change", (e) => {
+    const category = e.target.value;
+    fetchFoods(category);
+  });
+
+  // دریافت داده‌های اولیه
+  fetchFoods();
+</script>
+{% endblock %}

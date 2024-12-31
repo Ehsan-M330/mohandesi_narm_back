@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the Restaurant App</h1>
+        <div id="content">
+            <button id="btn-login" class="btn btn-primary">Login</button>
+            <button id="btn-register" class="btn btn-secondary">Register</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const contentDiv = document.getElementById("content");
+
+            // Load Login Template
+            document.getElementById("btn-login").addEventListener("click", () => {
+                fetch("/templates/login/")
+                    .then((response) => {
+                        if (response.ok) return response.text();
+                        throw new Error("Failed to load login template.");
+                    })
+                    .then((html) => {
+                        contentDiv.innerHTML = html;
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        contentDiv.innerHTML = "<p>Error loading login page.</p>";
+                    });
+            });
+
+            // Load Register Template
+            document.getElementById("btn-register").addEventListener("click", () => {
+                fetch("/templates/register/")
+                    .then((response) => {
+                        if (response.ok) return response.text();
+                        throw new Error("Failed to load register template.");
+                    })
+                    .then((html) => {
+                        contentDiv.innerHTML = html;
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        contentDiv.innerHTML = "<p>Error loading register page.</p>";
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
