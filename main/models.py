@@ -83,7 +83,8 @@ class Cart(models.Model):
             )
         self.cart_items.all().delete()  # type: ignore
         return order
-
+    def __str__(self):
+        return f"Cart for {self.customer.username}"
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="cart_items")
