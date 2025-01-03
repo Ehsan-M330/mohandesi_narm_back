@@ -4,6 +4,7 @@ from django.db import models
 # from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.forms import ValidationError
 
 
 class UserRole(models.TextChoices):
@@ -13,7 +14,6 @@ class UserRole(models.TextChoices):
 
 
 class User(AbstractUser):
-    # TODO
     role = models.CharField(max_length=10, choices=UserRole.choices, default="admin")
 
 
@@ -30,9 +30,8 @@ class Category(models.Model):
 
 
 class OrderStatus(models.TextChoices):
-    PENDING = "Pending", "Pending"
-    Accepted = "Accepted", "Accepted"
-    # PROCESSING = "Processing", "Processing"
+    PENDING = "pending", "Pending"
+    ACCEPTED = "accepted", "Accepted"
 
 
 class Order(models.Model):
@@ -59,6 +58,10 @@ class OrderItem(models.Model):
     )
     quantity = models.IntegerField(default=1)
 
+    def clean(self):
+        if self.quantity <= 0:
+            raise ValidationError("Quantity must be greater than zero.")
+
     def total_amount(self):
         return self.quantity * self.food.price
 
@@ -72,6 +75,15 @@ class Cart(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def convert_to_order(self, address):
+        order = Order.objects.create(customer=self.customer, address=address)
+        for cart_item in self.cart_items.all():  # type: ignore
+            OrderItem.objects.create(
+                order=order, food=cart_item.food, quantity=cart_item.quantity
+            )
+        self.cart_items.all().delete()  # type: ignore
+        return order
+
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="cart_items")
@@ -80,6 +92,9 @@ class CartItem(models.Model):
 
     def total_amount(self):
         return self.quantity * self.food.price
+
+    def __str__(self):
+        return f"{self.food.name} (x{self.quantity})"
 
 
 class Food(models.Model):
