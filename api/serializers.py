@@ -21,9 +21,22 @@ class RegisterCustomerSerializer(serializers.ModelSerializer):
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
+        fields = ["id","username","password"]
+        
+class GetEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
         fields = ["id","username"]
-
-
+        
+class RegisterEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username", "password"]
+        extra_kwargs = {
+            "username": {"required": True},
+            "password": {"required": True},
+        }
+        
 class FoodSerializer(serializers.ModelSerializer):
     class Meta:
         model = Food
@@ -54,11 +67,4 @@ class ShowOrderSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class RegisterEmployeeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["username", "password"]
-        extra_kwargs = {
-            "username": {"required": True},
-            "password": {"required": True},
-        }
+

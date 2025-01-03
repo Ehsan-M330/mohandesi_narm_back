@@ -7,6 +7,7 @@ from rest_framework.authtoken.models import Token
 from api.serializers import (
     EmployeeSerializer,
     FoodSerializer,
+    GetEmployeeSerializer,
     RegisterEmployeeSerializer,
 )
 from api.serializers import GetAddressSerializer
@@ -402,7 +403,7 @@ class EmployeesAPIView(APIView):
     def get(self, request):
         if request.user.role == UserRole.ADMIN:
             employees = User.objects.filter(role=UserRole.EMPLOYEE)
-            serializer = EmployeeSerializer(employees, many=True)
+            serializer = GetEmployeeSerializer(employees, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(
@@ -446,7 +447,6 @@ class EmployeesAPIView(APIView):
                 )
             except User.DoesNotExist:
                 return Response(
-                    {"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND
                 )
         else:
             return Response(
@@ -458,15 +458,18 @@ class EmployeesAPIView(APIView):
         if request.user.role == UserRole.ADMIN:
             try:
                 employee = User.objects.get(id=id)
-                serializer = EmployeeSerializer(employee, data=request.data)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(serializer.data, status=status.HTTP_200_OK)
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
             except User.DoesNotExist:
                 return Response(
                     {"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND
                 )
+                
+            serializer = EmployeeSerializer(employee, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(
                 {"message": "You are not authorized to access this page"},
