@@ -11,13 +11,5 @@ admin.site.register(Cart)
 # admin.site.register(User)
 
 
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ["name", "is_active", "image"]
-
-
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ["name", "created_by", "category", "price", "image", "is_active"]
-
-
-admin.site.register(User, UserAdmin)
+admin.site.register(User)
 # admin.site.register(Product, ProductAdmin)

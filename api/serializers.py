@@ -21,7 +21,7 @@ class RegisterCustomerSerializer(serializers.ModelSerializer):
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["username"]
+        fields = ["id","username"]
 
 
 class FoodSerializer(serializers.ModelSerializer):

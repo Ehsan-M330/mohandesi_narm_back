@@ -14,7 +14,7 @@ from api.serializers import RegisterCustomerSerializer
 from api.serializers import AddToCartSerializer
 from api.serializers import ShowOrderSerializer
 from api.serializers import ShowUserFactorSerializer
-from main.models import CartItem, OrderStatus, User
+from main.models import Cart, CartItem, OrderStatus, User
 from main.models import Food
 from main.models import Order
 from main.models import UserRole
@@ -149,17 +149,23 @@ class ShowCartAPIView(APIView):
                 {"message": "You are not allowed to see cart"},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        cart_items = CartItem.objects.filter(customer=request.user)
-        if cart_items.exists():
-            data = {
-                "cart_items": ShowUserFactorSerializer(cart_items, many=True).data,
-                "total_price": sum(item.total_amount() for item in cart_items),
-            }
-            return Response(data, status=status.HTTP_201_CREATED)
-        else:
-            # No items in the cart
+        try:
+            cart = Cart.objects.get(customer=request.user)
+            cart_items = cart.cart_items.all()  # type: ignore # Access related CartItem objects
+            if cart_items.exists():
+                data = {
+                    "cart_items": ShowUserFactorSerializer(cart_items, many=True).data,
+                    "total_price": sum(item.total_amount() for item in cart_items),
+                }
+                return Response(data, status=status.HTTP_200_OK)
+            else:
+                # No items in the cart
+                return Response(
+                    {"error": "Your cart is empty"}, status=status.HTTP_400_BAD_REQUEST
+                )
+        except Cart.DoesNotExist:
             return Response(
-                {"error": "Your cart is empty"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Cart does not exist"}, status=status.HTTP_404_NOT_FOUND
             )
 
 
@@ -171,6 +177,11 @@ class ShowOrderAPIView(APIView):
     # TODO pagination
 
     def get(self, request):
+        if request.user.role != UserRole.CUSTOMER:
+            return Response(
+                {"message": "You are not allowed to see orders"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         orders = Order.objects.filter(customer=request.user)
         serializer = ShowOrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
