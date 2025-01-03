@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from api.serializers import (
+    CategorySerializer,
     EmployeeSerializer,
     FoodSerializer,
     GetEmployeeSerializer,
@@ -16,7 +17,7 @@ from api.serializers import RegisterCustomerSerializer
 from api.serializers import AddToCartSerializer
 from api.serializers import ShowOrderSerializer
 from api.serializers import ShowUserFactorSerializer
-from main.models import Cart, CartItem, OrderStatus, User
+from main.models import Cart, CartItem, Category, OrderStatus, User
 from main.models import Food
 from main.models import Order
 from main.models import UserRole
@@ -118,20 +119,32 @@ class AddToCartAPIView(APIView):
                 {"message": "You are not allowed to add to cart"},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        
+        # Serialize the data
         serializer = AddToCartSerializer(data=request.data)
-        food_id = serializer.validated_data["Food"]  # type: ignore
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        food_id = serializer.validated_data["food"]  # type: ignore
         quantity = serializer.validated_data["quantity"]  # type: ignore
+        
         try:
-            food = Food.objects.get(id=food_id)
+            # Fetch the food item by its ID
+            food = Food.objects.get(id=food_id.id)
+            
+            # Get or create the cart item for the customer and the food
+            cart,created = Cart.objects.get_or_create(customer=request.user)
             cart_item, created = CartItem.objects.get_or_create(
-                customer=request.user, food=food
+                cart=cart, food=food
             )
+
             if not created:
                 cart_item.quantity += quantity
                 cart_item.save()
             else:
                 cart_item.quantity = quantity
                 cart_item.save()
+
             return Response(
                 {"message": "Food added to cart"}, status=status.HTTP_200_OK
             )
@@ -155,7 +168,7 @@ class ShowCartAPIView(APIView):
             )
         try:
             cart = Cart.objects.get(customer=request.user)
-            cart_items = cart.cart_items.all()  # type: ignore # Access related CartItem objects
+            cart_items = cart.cart_items.all()  # type: ignore 
             if cart_items.exists():
                 data = {
                     "cart_items": ShowUserFactorSerializer(cart_items, many=True).data,
@@ -173,12 +186,118 @@ class ShowCartAPIView(APIView):
             )
 
 
-# TODO check
+
+
+# class ShowUserFactorAPIView(APIView):
+#     permission_classes = [
+#         IsAuthenticated,
+#     ]
+
+#     def get(self, request):
+#         # Get the user's cart
+#         cart = Cart.objects.get(customer=request.user)
+
+#         # Get cart items associated with the user's cart
+#         cart_items = CartItem.objects.filter(cart=cart)
+
+#         if cart_items.exists():
+#             data = {
+#                 "cart_items": ShowUserFactorSerializer(cart_items, many=True).data,
+#                 "total_price": sum(item.total_amount() for item in cart_items),
+#             }
+#             return Response(data, status=status.HTTP_200_OK)
+#         else:
+#             # No items in the cart
+#             return Response(
+#                 {"error": "Your cart is empty"}, status=status.HTTP_400_BAD_REQUEST
+#             )
+
+
+# class CreateOrderAPIView(APIView):
+#     permission_classes = [
+#         IsAuthenticated,
+#     ]
+
+#     def post(self, request):
+#         serializer = GetAddressSerializer(data=request.data)
+#         if serializer.is_valid():
+#             address = serializer.validated_data["address"]  # type: ignore
+
+#             # Create the order
+#             order = Order.objects.create(customer=request.user, address=address)
+
+#             # Get cart items and associate the `Food` objects with the order
+#             cart_items = CartItem.objects.filter(customer=request.user)
+#             if cart_items.exists():
+#                 foods = [
+#                     item.food for item in cart_items  # type: ignore
+#                 ]  # Assuming `CartItem` has a `food` ForeignKey
+#                 order.items.set(foods)  # Link the Food objects to the order
+
+#                 # Clear the cart
+#                 cart_items.delete()
+
+#                 return Response(
+#                     {"message": "Order created successfully"},
+#                     status=status.HTTP_201_CREATED,
+#                 )
+#             else:
+#                 # No items in the cart
+#                 return Response(
+#                     {"error": "Your cart is empty"}, status=status.HTTP_400_BAD_REQUEST
+#                 )
+
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CreateOrderAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role != UserRole.CUSTOMER:
+            return Response(
+                {"message": "Only customers can create orders."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = GetAddressSerializer(data=request.data)
+        if serializer.is_valid():
+            address = serializer.validated_data["address"]  # type: ignore
+            
+            try:
+                # Get the user's cart
+                cart = Cart.objects.get(customer=request.user)
+                
+                # Ensure the cart has items
+                if not cart.items.exists():
+                    return Response(
+                        {"error": "Your cart is empty"}, status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Convert the cart to an order
+                order = cart.convert_to_order(address)
+                
+                # Prepare response data
+                return Response(
+                    {
+                        "message": "Order created successfully",
+                        "order_id": order.id, # type: ignore
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+            except Cart.DoesNotExist:
+                return Response(
+                    {"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ShowOrderAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
-    # TODO pagination
+    # TODO: Implement pagination if needed
 
     def get(self, request):
         if request.user.role != UserRole.CUSTOMER:
@@ -186,77 +305,17 @@ class ShowOrderAPIView(APIView):
                 {"message": "You are not allowed to see orders"},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        orders = Order.objects.filter(customer=request.user)
+        
+        orders = Order.objects.filter(customer=request.user).order_by('-updated_at')
+        
+        if not orders.exists():
+            return Response(
+                {"message": "No orders found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
         serializer = ShowOrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class ShowUserFactorAPIView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
-
-    def post(self, request):
-        serializer = GetAddressSerializer(data=request.data)
-        if serializer.is_valid():
-            address = serializer.validated_data["address"]  # type: ignore
-
-            # Get cart items and associate the `Food` objects with the order
-            cart_items = CartItem.objects.filter(customer=request.user)
-            if cart_items.exists():
-                data = {
-                    "cart_items": ShowUserFactorSerializer(cart_items, many=True).data,
-                    "total_price": sum(item.total_amount() for item in cart_items),
-                }
-                return Response(data, status=status.HTTP_201_CREATED)
-            else:
-                # No items in the cart
-                return Response(
-                    {"error": "Your cart is empty"}, status=status.HTTP_400_BAD_REQUEST
-                )
-
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CreateOrderAPIView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
-
-    def post(self, request):
-        serializer = GetAddressSerializer(data=request.data)
-        if serializer.is_valid():
-            address = serializer.validated_data["address"]  # type: ignore
-
-            # Create the order
-            order = Order.objects.create(customer=request.user, address=address)
-
-            # Get cart items and associate the `Food` objects with the order
-            cart_items = CartItem.objects.filter(customer=request.user)
-            if cart_items.exists():
-                foods = [
-                    item.food for item in cart_items  # type: ignore
-                ]  # Assuming `CartItem` has a `food` ForeignKey
-                order.items.set(foods)  # Link the Food objects to the order
-
-                # Clear the cart
-                cart_items.delete()
-
-                return Response(
-                    {"message": "Order created successfully"},
-                    status=status.HTTP_201_CREATED,
-                )
-            else:
-                # No items in the cart
-                return Response(
-                    {"error": "Your cart is empty"}, status=status.HTTP_400_BAD_REQUEST
-                )
-
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 # employee
 
 
@@ -484,3 +543,9 @@ class EmployeesAPIView(APIView):
                 {"message": "You are not authorized to access this page"},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+class GetCategoriesAPIView(APIView):
+    def get(self, request):
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

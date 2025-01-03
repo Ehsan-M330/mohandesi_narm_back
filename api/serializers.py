@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from main.models import CartItem, Food, Order, User
+from main.models import CartItem, Category, Food, Order, User
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150, required=True)
@@ -49,7 +49,11 @@ class FoodSerializer(serializers.ModelSerializer):
 class AddToCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
-        fields = ["Food", "quantity"]
+        fields = ["food", "quantity"]
+        extra_kwargs = {
+            "food": {"required": True},
+            "quantity": {"required": True,"min_value": 1},
+        }
 
 
 class GetAddressSerializer(serializers.ModelSerializer):
@@ -71,3 +75,7 @@ class ShowOrderSerializer(serializers.ModelSerializer):
 
 
 
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = "__all__"

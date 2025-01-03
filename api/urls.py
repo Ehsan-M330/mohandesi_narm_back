@@ -4,6 +4,8 @@ from rest_framework.authtoken.views import obtain_auth_token
 from api.views import (
     AcceptAnOrderAPIView,
     AddFoodAPIView,
+    AddToCartAPIView,
+    CreateOrderAPIView,
     DeleteFoodAPIView,
     EmployeesAPIView,
     FoodDetailAPIView,
@@ -16,7 +18,7 @@ from api.views import (
     UpdateFoodAPIView,
     LogoutAPIView,
     RgisterCustomerAPIView,
-    # CustomObtainAuthToken,
+    GetCategoriesAPIView
 )
 
 urlpatterns = [
@@ -25,7 +27,9 @@ urlpatterns = [
     path("signup/", RgisterCustomerAPIView.as_view(), name="signup"),
     path("foods/list/", ShowFoodsListAPIView.as_view(), name="show_foods"),
     path("food/detail/<int:id>/", FoodDetailAPIView.as_view(), name="food_detail"),
+    path("food/add-to-cart/", AddToCartAPIView.as_view(), name="add_to_cart"),
     path("cart/", ShowCartAPIView.as_view(), name="my_cart"),
+    path("createorder/",CreateOrderAPIView.as_view(), name="create_order"),
     path("order/", ShowOrderAPIView.as_view(), name="my_order"),
     path("employee/orders/pending", ShowPendingOrdersAPIView.as_view(), name="pending_orders"),
     path("employee/orders/accepted", ShowAcceptedOrdersAPIView.as_view(), name="accepted_orders"),
@@ -37,4 +41,5 @@ urlpatterns = [
     path("admin/employees/", EmployeesAPIView.as_view(), name="show_employees"),
     path("admin/employee/delete/<int:id>/", EmployeesAPIView.as_view(), name="delete_employee"),
     path("admin/employee/edit/<int:id>/", EmployeesAPIView.as_view(), name="edit_employee"),
+    path("getcategories/", GetCategoriesAPIView.as_view(), name="get_categories")
 ]
