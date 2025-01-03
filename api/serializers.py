@@ -62,10 +62,12 @@ class GetAddressSerializer(serializers.ModelSerializer):
         fields = ["address"]
 
 
-class ShowUserFactorSerializer(serializers.ModelSerializer):
+class ShowUserCartSerializer(serializers.ModelSerializer):
+    food_name = serializers.CharField(source="food.name", read_only=True)  # نام غذا
+    food_price = serializers.DecimalField(source="food.price", max_digits=10, decimal_places=2, read_only=True)  # قیمت غذا
     class Meta:
         model = CartItem
-        fields = "__all__"
+        fields = ['id', 'food', 'food_name', 'food_price', 'quantity']
 
 
 class ShowOrderSerializer(serializers.ModelSerializer):

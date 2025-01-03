@@ -16,7 +16,7 @@ from api.serializers import GetAddressSerializer
 from api.serializers import RegisterCustomerSerializer
 from api.serializers import AddToCartSerializer
 from api.serializers import ShowOrderSerializer
-from api.serializers import ShowUserFactorSerializer
+from api.serializers import ShowUserCartSerializer
 from main.models import Cart, CartItem, Category, OrderStatus, User
 from main.models import Food
 from main.models import Order
@@ -213,7 +213,7 @@ class ShowCartAPIView(APIView):
             cart_items = cart.cart_items.all()  # type: ignore 
             if cart_items.exists():
                 data = {
-                    "cart_items": ShowUserFactorSerializer(cart_items, many=True).data,
+                    "cart_items": ShowUserCartSerializer(cart_items, many=True).data,
                     "total_price": sum(item.total_amount() for item in cart_items),
                 }
                 return Response(data, status=status.HTTP_200_OK)
