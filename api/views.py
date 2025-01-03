@@ -468,7 +468,11 @@ class EmployeesAPIView(APIView):
                 return Response(
                     {"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND
                 )
-                
+            if employee.role != UserRole.EMPLOYEE:
+                return Response(
+                    {"error": "User is not an employee"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )    
             serializer = EmployeeSerializer(employee, data=request.data)
             if serializer.is_valid():
                 serializer.save()
