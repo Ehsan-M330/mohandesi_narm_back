@@ -8,6 +8,7 @@ from api.serializers import (
     EmployeeSerializer,
     FoodSerializer,
     GetEmployeeSerializer,
+    LoginSerializer,
     RegisterEmployeeSerializer,
 )
 from api.serializers import GetAddressSerializer
@@ -19,7 +20,7 @@ from main.models import Cart, CartItem, OrderStatus, User
 from main.models import Food
 from main.models import Order
 from main.models import UserRole
-
+from django.contrib.auth import authenticate
 
 class LogoutAPIView(APIView):
     def post(self, request):
@@ -29,23 +30,25 @@ class LogoutAPIView(APIView):
 
 class LoginAPIView(APIView):
     def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
-        try:
-            user = User.objects.get(username=username)
-            if check_password(password, user.password):
-                token, created = Token.objects.get_or_create(user=user)
-                return Response({"role": user.role, "token": token.key})
-            else:
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            username = request.data.get("username")
+            password = request.data.get("password")
+            try:
+                user = authenticate(username=username, password=password)
+                if user is not None:
+                    token, created = Token.objects.get_or_create(user=user)
+                    return Response({"role": user.role, "token": token.key}, status=status.HTTP_200_OK) # type: ignore
+                else:
+                    return Response(
+                        {"message": "Invalid credentials"},
+                        status=status.HTTP_401_UNAUTHORIZED,
+                    )
+            except User.DoesNotExist:
                 return Response(
-                    {"message": "Invalid credentials"},
-                    status=status.HTTP_401_UNAUTHORIZED,
+                    {"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
                 )
-        except User.DoesNotExist:
-            return Response(
-                {"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
-            )
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ShowFoodsListAPIView(APIView):
     permission_classes = [
@@ -422,11 +425,13 @@ class EmployeesAPIView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 else:
-                    User.objects.create(
-                        username=serializer.validated_data["username"],  # type: ignore
-                        password=serializer.validated_data["password"],  # type: ignore
-                        role=UserRole.EMPLOYEE,
-                    )
+                    user = User(
+                            username=serializer.validated_data["username"], # type: ignore
+                            role=UserRole.EMPLOYEE,
+                        )
+                    user.set_password(serializer.validated_data["password"])  # type: ignore # Hash the password
+                    user.save()
+
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:

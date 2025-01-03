@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from main.models import CartItem, Food, Order, User
 
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150, required=True)
+    password = serializers.CharField(write_only=True, required=True)
 
 class RegisterCustomerSerializer(serializers.ModelSerializer):
     # name = serializers.CharField(max_length=100)
