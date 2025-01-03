@@ -102,13 +102,13 @@ class RgisterCustomerAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# TODO ?
 class AddToCartAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
 
     def post(self, request):
-        # TODO check user
         if request.user.role != UserRole.CUSTOMER:
             return Response(
                 {"message": "You are not allowed to add to cart"},
@@ -144,6 +144,11 @@ class ShowCartAPIView(APIView):
     ]
 
     def get(self, request):
+        if request.user.role != UserRole.CUSTOMER:
+            return Response(
+                {"message": "You are not allowed to show cart"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         cart_items = CartItem.objects.filter(customer=request.user)
         if cart_items.exists():
             data = {
@@ -262,10 +267,10 @@ class AcceptAnOrderAPIView(APIView):
         IsAuthenticated,
     ]
 
-    def post(self, request, order_id):
+    def post(self, request, id):
         if request.user.role == UserRole.EMPLOYEE:
             try:
-                order = Order.objects.get(id=order_id)
+                order = Order.objects.get(id=id)
                 if order.status != OrderStatus.PENDING:
                     return Response(
                         {"error": "Order is not pending"},
@@ -419,10 +424,10 @@ class EmployeesAPIView(APIView):
             )
 
     # delete an employee
-    def delete(self, request, employee_id):
+    def delete(self, request, id):
         if request.user.role == UserRole.ADMIN:
             try:
-                employee = User.objects.get(id=employee_id)
+                employee = User.objects.get(id=id)
                 employee.delete()
                 return Response(
                     {"message": "Employee deleted successfully"},
