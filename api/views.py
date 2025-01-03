@@ -166,7 +166,36 @@ class AddToCartAPIView(APIView):
                 {"message": "Food not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
+class DeleteFromCartAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
 
+    def delete(self, request, id):
+        if request.user.role != UserRole.CUSTOMER:
+            return Response(
+                {"message": "You are not allowed to delete from cart"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            cart_item = CartItem.objects.get(id=id, cart__customer=request.user)
+            if cart_item.quantity > 1:
+                cart_item.quantity -= 1
+                cart_item.save()
+                return Response(
+                    {"message": "One item removed from cart", "quantity": cart_item.quantity},
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                cart_item.delete()
+                return Response(
+                    {"message": "Food removed from cart"}, status=status.HTTP_200_OK
+                )
+        except CartItem.DoesNotExist:
+            return Response(
+                {"message": "Food not found in cart"}, status=status.HTTP_404_NOT_FOUND
+            )
+            
 # TODO check
 class ShowCartAPIView(APIView):
     permission_classes = [

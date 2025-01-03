@@ -17,7 +17,8 @@ from api.views import (
     UpdateFoodAPIView,
     LogoutAPIView,
     RgisterCustomerAPIView,
-    GetCategoriesAPIView
+    GetCategoriesAPIView,
+    DeleteFromCartAPIView
 )
 
 urlpatterns = [
@@ -27,6 +28,7 @@ urlpatterns = [
     path("foods/list/", ShowFoodsListAPIView.as_view(), name="show_foods"),
     path("food/detail/<int:id>/", FoodDetailAPIView.as_view(), name="food_detail"),
     path("food/add-to-cart/", AddToCartAPIView.as_view(), name="add_to_cart"),
+    path("food/delete-from-cart/<int:id>/",DeleteFromCartAPIView.as_view(),name="delete_from_cart"),
     path("cart/", ShowCartAPIView.as_view(), name="my_cart"),
     path("createorder/",CreateOrderAPIView.as_view(), name="create_order"),
     path("order/", ShowOrderAPIView.as_view(), name="my_order"),
