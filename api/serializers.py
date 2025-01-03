@@ -64,7 +64,7 @@ class GetAddressSerializer(serializers.ModelSerializer):
 
 class ShowUserCartSerializer(serializers.ModelSerializer):
     food_name = serializers.CharField(source="food.name", read_only=True)  # نام غذا
-    food_price = serializers.DecimalField(source="food.price", max_digits=10, decimal_places=2, read_only=True)  # قیمت غذا
+    food_price = serializers.FloatField(source="food.price", read_only=True)
     class Meta:
         model = CartItem
         fields = ['id', 'food', 'food_name', 'food_price', 'quantity']
