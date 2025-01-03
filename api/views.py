@@ -127,9 +127,9 @@ class FoodDetailAPIView(APIView):
         IsAuthenticated,
     ]
 
-    def get(self, request, pk):
+    def get(self, request, id):
         try:
-            food = Food.objects.get(id=pk)
+            food = Food.objects.get(id=id)
             serializer = FoodSerializer(food)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Food.DoesNotExist:
@@ -424,10 +424,10 @@ class DeleteFoodAPIView(APIView):
         IsAuthenticated,
     ]
 
-    def delete(self, request, food_id):
+    def delete(self, request, id):
         if request.user.role == UserRole.ADMIN:
             try:
-                food = Food.objects.get(id=food_id)
+                food = Food.objects.get(id=id)
                 food.delete()
                 return Response(
                     {"message": "Food deleted successfully"},
