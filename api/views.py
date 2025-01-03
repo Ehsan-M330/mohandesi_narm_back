@@ -144,7 +144,7 @@ class AddToCartAPIView(APIView):
             else:
                 cart_item.quantity = quantity
                 cart_item.save()
-
+            food.rate+=1
             return Response(
                 {"message": "Food added to cart"}, status=status.HTTP_200_OK
             )
