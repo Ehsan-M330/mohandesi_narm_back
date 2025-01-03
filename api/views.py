@@ -22,6 +22,7 @@ from main.models import Food
 from main.models import Order
 from main.models import UserRole
 from django.contrib.auth import authenticate
+from django.core.paginator import Paginator
 
 class LogoutAPIView(APIView):
     def post(self, request):
@@ -56,15 +57,27 @@ class ShowFoodsListAPIView(APIView):
         IsAuthenticated,
     ]
 
-    # TODO pagination
     def get(self, request):
         category = self.request.GET.get("category")
         if category:
             foods = Food.objects.filter(category__name=category).order_by("rate")
         else:
             foods = Food.objects.all()
-        serializer = FoodSerializer(foods, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Paginate foods
+        paginator = Paginator(foods, 10)  # 10 items per page
+        page_number = request.GET.get('page',1)  # Get the current page number
+        page = paginator.get_page(page_number)  # Get the current page object
+
+        # Serialize the paginated data
+        serializer = FoodSerializer(page.object_list, many=True)
+
+        return Response({
+            'data': serializer.data,
+            'page': page.number,
+            'total_pages': paginator.num_pages,
+            'total_items': paginator.count,
+        }, status=status.HTTP_200_OK)
 
 
 class FoodDetailAPIView(APIView):
@@ -297,8 +310,7 @@ class ShowOrderAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
-    # TODO: Implement pagination if needed
-
+    
     def get(self, request):
         if request.user.role != UserRole.CUSTOMER:
             return Response(
@@ -313,9 +325,22 @@ class ShowOrderAPIView(APIView):
                 {"message": "No orders found"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+
+        # Pagination
+        paginator = Paginator(orders, 10)  # 10 orders per page
+        page_number = request.GET.get('page',1)  # Get the page number from the URL
+        page = paginator.get_page(page_number)  # Get the current page
         
-        serializer = ShowOrderSerializer(orders, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Serialize the orders
+        serializer = ShowOrderSerializer(page.object_list, many=True)
+
+        return Response({
+            'data': serializer.data,
+            'page': page.number,
+            'total_pages': paginator.num_pages,
+            'total_items': paginator.count,
+        }, status=status.HTTP_200_OK)
+    
 # employee
 
 
@@ -326,9 +351,22 @@ class ShowPendingOrdersAPIView(APIView):
 
     def get(self, request):
         if request.user.role == UserRole.EMPLOYEE:
-            orders = Order.objects.filter(status=OrderStatus.PENDING)
-            serializer = ShowOrderSerializer(orders, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            orders = Order.objects.filter(status=OrderStatus.PENDING).order_by('-updated_at')
+            
+            # Pagination
+            paginator = Paginator(orders, 10)  # 10 orders per page
+            page_number = request.GET.get('page',1)  # Get the page number from the URL
+            page = paginator.get_page(page_number)  # Get the current page
+            
+            # Serialize the orders
+            serializer = ShowOrderSerializer(page.object_list, many=True)
+
+            return Response({
+                'data': serializer.data,
+                'page': page.number,
+                'total_pages': paginator.num_pages,
+                'total_items': paginator.count,
+            }, status=status.HTTP_200_OK)
         else:
             return Response(
                 {"message": "You are not authorized to access this page"},
@@ -374,15 +412,27 @@ class ShowAcceptedOrdersAPIView(APIView):
 
     def get(self, request):
         if request.user.role == UserRole.EMPLOYEE:
-            orders = Order.objects.filter(status=OrderStatus.ACCEPTED)
-            serializer = ShowOrderSerializer(orders, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            orders = Order.objects.filter(status=OrderStatus.ACCEPTED).order_by('-updated_at')
+            
+            # Pagination
+            paginator = Paginator(orders, 10)  # 10 orders per page
+            page_number = request.GET.get('page',1)  # Get the page number from the URL
+            page = paginator.get_page(page_number)  # Get the current page
+            
+            # Serialize the orders
+            serializer = ShowOrderSerializer(page.object_list, many=True)
+
+            return Response({
+                'data': serializer.data,
+                'page': page.number,
+                'total_pages': paginator.num_pages,
+                'total_items': paginator.count,
+            }, status=status.HTTP_200_OK)
         else:
             return Response(
                 {"message": "You are not authorized to access this page"},
                 status=status.HTTP_403_FORBIDDEN,
             )
-
 
 # admin
 
