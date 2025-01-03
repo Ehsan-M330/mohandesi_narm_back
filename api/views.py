@@ -146,7 +146,7 @@ class ShowCartAPIView(APIView):
     def get(self, request):
         if request.user.role != UserRole.CUSTOMER:
             return Response(
-                {"message": "You are not allowed to show cart"},
+                {"message": "You are not allowed to see cart"},
                 status=status.HTTP_403_FORBIDDEN,
             )
         cart_items = CartItem.objects.filter(customer=request.user)
@@ -443,4 +443,21 @@ class EmployeesAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-    # TODO UPDATE?
+    def put(self, request, id):
+        if request.user.role == UserRole.ADMIN:
+            try:
+                employee = User.objects.get(id=id)
+                serializer = EmployeeSerializer(employee, data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(
+                {"message": "You are not authorized to access this page"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
