@@ -1,5 +1,5 @@
 from django.contrib import admin
-from main.models import Cart, CartItem, Food, Order, OrderItem, User, Category, UserRole
+from main.models import Address, Cart, CartItem, DiscountCode, Food, Order, OrderItem, User, Category, UserRole
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 
@@ -76,6 +76,22 @@ class CartItemAdmin(admin.ModelAdmin):
 
     list_per_page = 20
 
+
+class DiscountCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'discount_percent', 'expiration_date', 'created_at')
+    search_fields = ('code',)
+    list_filter = ('discount_percent', 'expiration_date')
+    ordering = ('-created_at',)
+
+
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ('user', 'address')
+    search_fields = ('user__username', 'address')
+    list_filter = ('user',)
+
+
+admin.site.register(DiscountCode, DiscountCodeAdmin)
+admin.site.register(Address, AddressAdmin)
 
 admin.site.register(CartItem, CartItemAdmin)
 admin.site.register(Order, OrderAdmin)

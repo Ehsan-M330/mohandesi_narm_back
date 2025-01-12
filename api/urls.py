@@ -2,6 +2,7 @@ from django.urls import path
 
 from api.views import (
     AcceptAnOrderAPIView,
+    AddAddressAPIView,
     AddFoodAPIView,
     AddToCartAPIView,
     CreateOrderAPIView,
@@ -42,5 +43,7 @@ urlpatterns = [
     path("admin/employees/", EmployeesAPIView.as_view(), name="show_employees"),
     path("admin/employee/delete/<int:id>/", EmployeesAPIView.as_view(), name="delete_employee"),
     path("admin/employee/edit/<int:id>/", EmployeesAPIView.as_view(), name="edit_employee"),
-    path("getcategories/", GetCategoriesAPIView.as_view(), name="get_categories")
+    path("getcategories/", GetCategoriesAPIView.as_view(), name="get_categories"),
+    
+    path("addaddress/",AddAddressAPIView.as_view(),name="add_address")
 ]
