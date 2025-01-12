@@ -20,8 +20,10 @@ from api.views import (
     ShowCartAPIView,
     ShowDiscountCodesAPIView,
     ShowFoodsListAPIView,
+    ShowMostSelledFoodsListAPIView,
     ShowOrderAPIView,
     ShowOrderDetailAPIView,
+    ShowOrdersAndRevenueAPIView,
     ShowPendingOrdersAPIView,
     UpdateFoodAPIView,
     LogoutAPIView,
@@ -67,6 +69,8 @@ urlpatterns = [
     
     path("ratefood/", RateFoodAPIView.as_view(), name="rate_food"),
     
-    path("checkdiscountcode/",CheckDiscountCodeAPIView.as_view(), name="check_discount_code")
+    path("checkdiscountcode/",CheckDiscountCodeAPIView.as_view(), name="check_discount_code"),
     
+    path("admin/mostselledfoods/",ShowMostSelledFoodsListAPIView.as_view(),name="most-selled-foods"),
+    path("admin/ordersandrevenue/",ShowOrdersAndRevenueAPIView.as_view(),name="orders_and_revenue"),
 ]

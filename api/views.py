@@ -34,6 +34,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 from django.utils.timezone import now
+from django.db.models import Sum
 
 class LogoutAPIView(APIView):
     def post(self, request):
@@ -938,3 +939,83 @@ class RateFoodAPIView(APIView):
                 )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ShowMostSelledFoodsListAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        if request.user.role != UserRole.ADMIN:
+            return Response(
+                {"message": "You are not authorized to access this page"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        category = self.request.GET.get("category")
+        if category:
+            foods = Food.objects.filter(category__name=category).order_by("selled")
+        else:
+            foods = Food.objects.all()
+
+        paginator = Paginator(foods, 10)
+        page_number = request.GET.get("page", 1)
+        page = paginator.get_page(page_number)
+
+        serializer = FoodSerializer(page.object_list, many=True)
+
+        return Response(
+            {
+                "data": serializer.data,
+                "page": page.number,
+                "total_pages": paginator.num_pages,
+                "total_items": paginator.count,
+            },
+            status=status.HTTP_200_OK,
+        )
+        
+        
+class ShowOrdersAndRevenueAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        if request.user.role != UserRole.ADMIN:
+            return Response(
+                {"message": "You are not authorized to access this page"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # دریافت تاریخ شروع و تاریخ پایان از query parameters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        # بررسی اینکه تاریخ شروع و پایان وارد شده باشد
+        if not start_date or not end_date:
+            return Response(
+                {"error": "Please provide both start_date and end_date"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # فیلتر کردن سفارشات بر اساس تاریخ شروع و پایان
+        orders_in_date_range = Order.objects.filter(
+            created_at__gte=start_date,
+            created_at__lte=end_date
+        )
+
+        # محاسبه درآمد کلی از سفارشات در بازه زمانی
+        total_revenue = orders_in_date_range.aggregate(
+            total_income=Sum('total_price')
+        )['total_income'] or 0
+
+        # سریالایز کردن اطلاعات سفارشات
+        orders_serializer = ShowOrderSerializer(orders_in_date_range, many=True)
+
+        # بازگشت پاسخ با اطلاعات سفارشات و درآمد کلی
+        return Response(
+            {
+                "orders": orders_serializer.data,
+                "total_revenue": total_revenue,
+            },
+            status=status.HTTP_200_OK
+        )
