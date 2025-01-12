@@ -7,11 +7,12 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from api.serializers import (
     CategorySerializer,
-    CheckDiscountCodeSerializer,
+    ShowDiscountCodeSerializer,
     DiscountCodeSerializer,
     EmployeeSerializer,
     FoodSerializer,
     GetAddressSerializer,
+    GetDiscountCodeSerializer,
     GetEmployeeSerializer,
     LoginSerializer,
     RateFoodSerializer,
@@ -724,9 +725,9 @@ class CheckDiscountCodeAPIView(APIView):
     ]
 
     def post(self, request):
-        serializer = CheckDiscountCodeSerializer(data=request.data)
+        serializer = GetDiscountCodeSerializer(data=request.data)
         if serializer.is_valid():
-            discount_code = serializer.validated_data["discount_code"] # type: ignore
+            discount_code = serializer.validated_data["code"]  # type: ignore
             try:
                 # گرفتن کد تخفیف از دیتابیس
                 discount = DiscountCode.objects.get(code=discount_code)
@@ -754,10 +755,10 @@ class CheckDiscountCodeAPIView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                return Response(
-                    {"discount_percent": discount.discount_percent},
-                    status=status.HTTP_200_OK,
-                )
+                # اگر همه شرایط درست بود، اطلاعات کد تخفیف را با استفاده از سریالایزر ارسال می‌کنیم
+                discount_data = ShowDiscountCodeSerializer(discount).data
+                return Response(discount_data, status=status.HTTP_200_OK)
+
             except DiscountCode.DoesNotExist:
                 return Response(
                     {"error": "Discount code not found"},

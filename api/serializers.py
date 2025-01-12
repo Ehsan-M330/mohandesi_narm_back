@@ -286,7 +286,12 @@ class RateFoodSerializer(serializers.Serializer):
             "max_value": "Rate must not exceed 5.",
         },
     )
-class CheckDiscountCodeSerializer(serializers.ModelSerializer):
+class GetDiscountCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscountCode
+        fields = ["code"]
+
+class ShowDiscountCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscountCode
         fields = "__all__"
