@@ -212,15 +212,21 @@ class ShowUserCartSerializer(serializers.ModelSerializer):
             },
         }
 
+class ShowFoodSerializer(serializers.ModelSerializer):
+    # نمایش شناسه و نام غذا
+    class Meta:
+        model = Food
+        fields = ['id', 'name']
+        
 class ShowOrderSerializer(serializers.ModelSerializer):
-    # ارسال شناسه مشتری (id)
     customer_id = serializers.IntegerField(source='customer.id', read_only=True)
-    # ارسال نام مشتری (username یا نام کامل)
     customer_name = serializers.CharField(source='customer.username', read_only=True)
+    # اضافه کردن لیست غذاهای موجود در سفارش
+    foods = ShowFoodSerializer(source='items', many=True, read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'customer_id', 'customer_name', 'order_date', 'status', 'total_price', 'created_at', 'updated_at']
+        fields = ['id', 'customer_id', 'customer_name', 'order_date', 'status', 'total_price', 'created_at', 'updated_at', 'foods']
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
