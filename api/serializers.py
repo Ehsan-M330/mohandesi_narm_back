@@ -105,7 +105,7 @@ class RegisterEmployeeSerializer(serializers.ModelSerializer):
             },
             "password": {
                 "required": True,
-                "min_length": 8,
+                "min_length": 4,
                 "error_messages": {
                     "required": "Password is required.",
                     "min_length": "Password must be at least 8 characters long.",
@@ -213,9 +213,12 @@ class ShowUserCartSerializer(serializers.ModelSerializer):
         }
 
 class ShowOrderSerializer(serializers.ModelSerializer):
+    # به جای ارسال شناسه مشتری، نام آن را برمی‌گردانیم
+    customer = serializers.CharField(source='customer.username', read_only=True)
+
     class Meta:
         model = Order
-        fields = "__all__"
+        fields = ['id', 'customer', 'order_date', 'status', 'total_price', 'created_at', 'updated_at']
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

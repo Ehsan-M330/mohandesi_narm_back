@@ -15,6 +15,7 @@ from api.views import (
     FoodDetailAPIView,
     GetAddressesAPIView,
     LoginAPIView,
+    RateFoodAPIView,
     ShowAcceptedOrdersAPIView,
     ShowCartAPIView,
     ShowDiscountCodesAPIView,
@@ -63,5 +64,6 @@ urlpatterns = [
     path("orderdetail/<int:id>/",ShowOrderDetailAPIView.as_view(),name="order_detail"),
     path("cancelorder/",CancelOrderAPIView.as_view(),name="cancel_order"),
     
+    path("ratefood/", RateFoodAPIView.as_view(), name="rate_food"),
     
 ]
