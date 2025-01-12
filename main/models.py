@@ -52,8 +52,9 @@ class Order(models.Model):
         if not self.discount_code:
             return self.total_price
 
-        # اعمال درصد تخفیف
-        return self.total_price * (1 - self.discount_code.discount_percent / 100)
+        # اعمال درصد تخفیف با استفاده از Decimal
+        discount_multiplier = Decimal(1) - (Decimal(self.discount_code.discount_percent) / Decimal(100))
+        return self.total_price * discount_multiplier
 
     def save(self, *args, **kwargs):
         if self.pk:  # مطمئن می‌شویم نمونه ذخیره شده است

@@ -33,6 +33,7 @@ from datetime import datetime, timedelta, timezone
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
+from django.utils.timezone import now
 
 class LogoutAPIView(APIView):
     def post(self, request):
@@ -247,6 +248,7 @@ class CreateOrderAPIView(APIView):
         serializer = GetAddressSerializer(data=request.data)
         if serializer.is_valid():
             address_text = serializer.validated_data["address"]  # type: ignore
+            discount_code = request.data.get("discount_code")  # دریافت کد تخفیف
 
             try:
                 # پیدا کردن یا ایجاد نمونه Address برای کاربر
@@ -264,17 +266,58 @@ class CreateOrderAPIView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
+                # بررسی کد تخفیف (در صورت وجود)
+                discount = None
+                if discount_code:
+                    try:
+                        discount = DiscountCode.objects.get(code=discount_code)
+
+                        # بررسی زمان انقضا
+                        if discount.expiration_date < now():
+                            return Response(
+                                {"error": "Discount code has expired"},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+
+                        # بررسی اینکه کاربر قبلاً از کد استفاده نکرده باشد
+                        if UserDiscountUse.objects.filter(
+                            user=request.user, discount_code=discount
+                        ).exists():
+                            return Response(
+                                {"error": "You have already used this discount code."},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
+
+                    except DiscountCode.DoesNotExist:
+                        return Response(
+                            {"error": "Invalid discount code"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
                 # تبدیل سبد خرید به سفارش
                 order = cart.convert_to_order(address)
+
+                # اعمال کد تخفیف (در صورت وجود)
+                if discount:
+                    order.discount_code = discount # type: ignore
+                    order.total_price = order.apply_discount() # type: ignore
+                    order.save()
+
+                    # ثبت استفاده از کد تخفیف
+                    UserDiscountUse.objects.create(
+                        user=request.user, discount_code=discount
+                    )
 
                 # پاسخ موفقیت
                 return Response(
                     {
                         "message": "Order created successfully",
                         "order_id": order.id,  # type: ignore
+                        "total_price": str(order.total_price),  # ارسال قیمت نهایی
                     },
                     status=status.HTTP_201_CREATED,
                 )
+
             except Cart.DoesNotExist:
                 return Response(
                     {"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND
