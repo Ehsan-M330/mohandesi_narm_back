@@ -21,7 +21,7 @@ from api.serializers import RegisterCustomerSerializer
 from api.serializers import AddToCartSerializer
 from api.serializers import ShowOrderSerializer
 from api.serializers import ShowUserCartSerializer
-from main.models import Address, Cart, CartItem, Category, DiscountCode, OrderStatus, Rating, User
+from main.models import Address, Cart, CartItem, Category, DiscountCode, OrderStatus, Rating, User, UserDiscountUse
 from main.models import Food
 from main.models import Order
 from main.models import UserRole
@@ -359,33 +359,33 @@ class ShowPendingOrdersAPIView(APIView):
 
 
 class AcceptAnOrderAPIView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, id):
-        if request.user.role == UserRole.EMPLOYEE:
-            try:
-                order = Order.objects.get(id=id)
-                if order.status != OrderStatus.PENDING:
-                    return Response(
-                        {"error": "Order is not pending"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                order.status = OrderStatus.ACCEPTED
-                order.save()
-                return Response(
-                    {"message": "Order Accepted successfully"},
-                    status=status.HTTP_200_OK,
-                )
-            except Order.DoesNotExist:
-                return Response(
-                    {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
-                )
-        else:
+        if request.user.role != UserRole.EMPLOYEE:
             return Response(
-                {"message": "You are not authorized to access this page"},
+                {"message": "You are not authorized to accept orders."},
                 status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            order = Order.objects.get(id=id)
+            if order.status == OrderStatus.ACCEPTED:
+                return Response(
+                    {"message": "Order has already been accepted."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # تغییر وضعیت سفارش به پذیرفته شده
+            order.status = OrderStatus.ACCEPTED
+            order.save()
+
+            return Response(
+                {"message": "Order accepted successfully."},
+                status=status.HTTP_200_OK,
+            )
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
 
@@ -718,7 +718,54 @@ class DeleteDiscountCodeAPIView(APIView):
             return Response(
                 {"error": "Discount code not found"}, status=status.HTTP_404_NOT_FOUND
             )
-            
+
+class CheckDiscountCodeAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def post(self, request):
+        serializer = CheckDiscountCodeSerializer(data=request.data)
+        if serializer.is_valid():
+            discount_code = serializer.validated_data["discount_code"]
+            try:
+                # گرفتن کد تخفیف از دیتابیس
+                discount = DiscountCode.objects.get(code=discount_code)
+
+                # بررسی زمان انقضا کد تخفیف
+                current_time = datetime.now()
+                if discount.expiration_date < current_time:
+                    return Response(
+                        {"error": "Discount code has expired"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                # بررسی استفاده قبلی کد تخفیف توسط کاربر
+                if UserDiscountUse.objects.filter(user=request.user, discount_code=discount).exists():
+                    return Response(
+                        {"error": "You have already used this discount code."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                # بررسی اینکه آیا در نیم ساعت اول می‌توان از کد تخفیف استفاده کرد
+                time_difference = current_time - discount.created_at
+                if time_difference > timedelta(minutes=30):
+                    return Response(
+                        {"error": "Discount code can only be used within 30 minutes of creation."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                return Response(
+                    {"discount_percent": discount.discount_percent},
+                    status=status.HTTP_200_OK,
+                )
+            except DiscountCode.DoesNotExist:
+                return Response(
+                    {"error": "Discount code not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class ShowOrderDetailAPIView(APIView):
     permission_classes = [
         IsAuthenticated,

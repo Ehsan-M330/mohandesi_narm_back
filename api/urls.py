@@ -27,7 +27,8 @@ from api.views import (
     LogoutAPIView,
     RgisterCustomerAPIView,
     GetCategoriesAPIView,
-    DeleteFromCartAPIView
+    DeleteFromCartAPIView,
+    CheckDiscountCodeAPIView
 )
 
 urlpatterns = [
@@ -65,5 +66,7 @@ urlpatterns = [
     path("cancelorder/",CancelOrderAPIView.as_view(),name="cancel_order"),
     
     path("ratefood/", RateFoodAPIView.as_view(), name="rate_food"),
+    
+    path("checkdiscountcode/",CheckDiscountCodeAPIView.as_view(), name="check_discount_code")
     
 ]

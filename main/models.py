@@ -62,10 +62,18 @@ class Order(models.Model):
             )  # محاسبه قیمت کل
             if self.discount_code:
                 self.total_price = self.apply_discount()
+
+            # اضافه کردن تعداد فروش غذاها به `selled`
+            if self.status == OrderStatus.ACCEPTED:
+                for order_item in self.order_items.all():  # type: ignore
+                    food = order_item.food
+                    food.selled += order_item.quantity
+                    food.save()
+
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Order #{self.id} by {self.customer.username}" # type: ignore
+        return f"Order #{self.id} by {self.customer.username}"  # type: ignore
 
 
 

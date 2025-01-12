@@ -114,6 +114,8 @@ class RegisterEmployeeSerializer(serializers.ModelSerializer):
         }
 
 class FoodSerializer(serializers.ModelSerializer):
+    category_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Food
         fields = "__all__"
@@ -153,6 +155,9 @@ class FoodSerializer(serializers.ModelSerializer):
                 },
             },
         }
+
+    def get_category_name(self, obj):
+        return obj.category.name if obj.category else None
 
 class AddToCartSerializer(serializers.ModelSerializer):
     class Meta:
@@ -281,3 +286,7 @@ class RateFoodSerializer(serializers.Serializer):
             "max_value": "Rate must not exceed 5.",
         },
     )
+class CheckDiscountCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscountCode
+        fields = "__all__"
