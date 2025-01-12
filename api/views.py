@@ -156,9 +156,7 @@ class AddToCartAPIView(APIView):
             else:
                 cart_item.quantity = quantity
                 cart_item.save()
-            #TODO no need for rate anymore
-            food.rate += 1
-            food.save()
+                
             return Response(
                 {"message": "Food added to cart"}, status=status.HTTP_200_OK
             )
@@ -725,6 +723,7 @@ class CheckDiscountCodeAPIView(APIView):
     ]
 
     def post(self, request):
+        #TODO
         serializer = CheckDiscountCodeSerializer(data=request.data)
         if serializer.is_valid():
             discount_code = serializer.validated_data["discount_code"]
@@ -860,8 +859,15 @@ class RateFoodAPIView(APIView):
         # سریالایزر برای اعتبارسنجی داده‌ها
         serializer = RateFoodSerializer(data=request.data)
         if serializer.is_valid():
-            food_id = serializer.validated_data["food_id"] # type: ignore
-            rate = serializer.validated_data["rate"] # type: ignore
+            food_id = serializer.validated_data["food_id"]  # type: ignore
+            rate = serializer.validated_data["rate"]  # type: ignore
+
+            # بررسی اینکه امتیاز بین 1 و 5 باشد
+            if rate < 1 or rate > 5:
+                return Response(
+                    {"error": "Rating must be between 1 and 5"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             try:
                 # پیدا کردن غذا
@@ -878,8 +884,12 @@ class RateFoodAPIView(APIView):
                     rating.save()
 
                 # محاسبه میانگین امتیاز غذا
-                average_rating = food.ratings.aggregate(models.Avg("score"))["score__avg"] # type: ignore
+                average_rating = food.ratings.aggregate(models.Avg("score"))["score__avg"]  # type: ignore
                 
+                # به‌روزرسانی فیلد `rate` غذا
+                food.rate = round(average_rating, 2) if average_rating else 0
+                food.save()
+
                 return Response(
                     {
                         "message": "Rating submitted successfully",
