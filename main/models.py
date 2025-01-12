@@ -107,13 +107,19 @@ class Cart(models.Model):
         # ابتدا سفارش را ایجاد می‌کنیم
         order = Order(customer=self.customer, address=address)
         order.save()  # نمونه را ذخیره می‌کنیم تا PK تولید شود
-        
+
         # سپس آیتم‌های سبد خرید را به سفارش اضافه می‌کنیم
+        total_price = Decimal(0)
         for cart_item in self.cart_items.all():  # type: ignore
-            OrderItem.objects.create(
+            order_item = OrderItem.objects.create(
                 order=order, food=cart_item.food, quantity=cart_item.quantity
             )
+            total_price += order_item.total_amount()  # محاسبه قیمت کل
         
+        # به‌روزرسانی `total_price` سفارش
+        order.total_price = total_price
+        order.save()  # ذخیره سفارش با قیمت کل محاسبه‌شده
+
         # حذف آیتم‌های سبد خرید
         self.cart_items.all().delete()  # type: ignore
 

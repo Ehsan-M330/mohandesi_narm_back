@@ -102,7 +102,6 @@ class FoodDetailAPIView(APIView):
     def get(self, request, id):
         try:
             food = Food.objects.get(id=id)
-            #TODO check
             serializer = FoodSerializer(food)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Food.DoesNotExist:
@@ -310,7 +309,6 @@ class ShowOrderAPIView(APIView):
 
         # Serialize the orders
         serializer = ShowOrderSerializer(page.object_list, many=True)
-        #TODO check for returning the raeted or not status and be able to cancel if not completed for 30 min
         return Response(
             {
                 "data": serializer.data,

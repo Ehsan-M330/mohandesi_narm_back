@@ -50,7 +50,6 @@ class RegisterCustomerSerializer(serializers.ModelSerializer):
                     "min_length": "Password must be at least 8 characters long.",
                 },
             },
-            #TODO better email?
             "email": {
                 "required": True,
                 "max_length": 254,
