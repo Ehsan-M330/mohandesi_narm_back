@@ -630,7 +630,38 @@ class GetAddressesAPIView(APIView):
         serializer = GetAddressSerializer(addresses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+class DeleteAddressAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
 
+    def delete(self, request):
+        if request.user.role != UserRole.CUSTOMER:
+            return Response(
+                {"message": "You are not authorized to access this page"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
+        # بررسی وجود پارامتر 'address' در درخواست
+        address_text = request.data.get("address")
+        if not address_text:
+            return Response(
+                {"error": "Address text is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # پیدا کردن آدرس مرتبط با متن و کاربر
+            address = Address.objects.get(user=request.user, address=address_text)
+            address.delete()
+            return Response(
+                {"message": "Address deleted successfully"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Address.DoesNotExist:
+            return Response(
+                {"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+            
 class CreateDiscountCodeAPIView(APIView):
     permission_classes = [
         IsAuthenticated,

@@ -5,8 +5,10 @@ from api.views import (
     AddAddressAPIView,
     AddFoodAPIView,
     AddToCartAPIView,
+    CancelOrderAPIView,
     CreateDiscountCodeAPIView,
     CreateOrderAPIView,
+    DeleteAddressAPIView,
     DeleteFoodAPIView,
     EmployeesAPIView,
     FoodDetailAPIView,
@@ -17,6 +19,7 @@ from api.views import (
     ShowDiscountCodesAPIView,
     ShowFoodsListAPIView,
     ShowOrderAPIView,
+    ShowOrderDetailAPIView,
     ShowPendingOrdersAPIView,
     UpdateFoodAPIView,
     LogoutAPIView,
@@ -50,8 +53,13 @@ urlpatterns = [
     
     path("addaddress/",AddAddressAPIView.as_view(),name="add_address"),
     path("getaddresses/",GetAddressesAPIView.as_view(),name="getaddress"),
-    
+    path("deleteaddress/",DeleteAddressAPIView.as_view(),name="delete_address"),
+
     path("admin/adddiscountcode/",CreateDiscountCodeAPIView.as_view(),name="add_discount_code"),
     path("admin/discountcodes/", ShowDiscountCodesAPIView.as_view(), name="show_discount_codes"),
+    
+    path("orderdetail/",ShowOrderDetailAPIView.as_view(),name="order_detail"),
+    path("cancelorder/",CancelOrderAPIView.as_view(),name="cancel_order"),
+    
     
 ]
