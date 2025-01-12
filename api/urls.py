@@ -9,6 +9,7 @@ from api.views import (
     CreateDiscountCodeAPIView,
     CreateOrderAPIView,
     DeleteAddressAPIView,
+    DeleteDiscountCodeAPIView,
     DeleteFoodAPIView,
     EmployeesAPIView,
     FoodDetailAPIView,
@@ -57,6 +58,7 @@ urlpatterns = [
 
     path("admin/adddiscountcode/",CreateDiscountCodeAPIView.as_view(),name="add_discount_code"),
     path("admin/discountcodes/", ShowDiscountCodesAPIView.as_view(), name="show_discount_codes"),
+    path("admin/discountcode/delete/<int:id>/", DeleteDiscountCodeAPIView.as_view(), name="delete_discount_code"),
     
     path("orderdetail/",ShowOrderDetailAPIView.as_view(),name="order_detail"),
     path("cancelorder/",CancelOrderAPIView.as_view(),name="cancel_order"),

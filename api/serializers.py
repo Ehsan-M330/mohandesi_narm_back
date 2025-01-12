@@ -13,7 +13,7 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(
         write_only=True, 
         required=True, 
-        min_length=8,
+        min_length=4,
         error_messages={
             "required": "Password is required.",
             "min_length": "Password must be at least 8 characters long.",
@@ -143,9 +143,9 @@ class FoodSerializer(serializers.ModelSerializer):
                 },
             },
             "rate": {
-                "required": True,
+                "required": False,
                 "min_value": 0,
-                "max_value": 100,
+                "max_value": 5,
                 "error_messages": {
                     "required": "Rate is required.",
                     "min_value": "Rate must not be less than 0.",
@@ -239,11 +239,11 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "code": {
                 "required": True,
-                "min_length": 4,
-                "max_length": 50,
+                "min_length": 8,
+                "max_length": 8,
                 "error_messages": {
                     "required": "Discount code is required.",
-                    "max_length": "Discount code must not exceed 50 characters.",
+                    "max_length": "Discount code must not exceed 8 characters.",
                 },
             },
             "discount_percent": {

@@ -694,7 +694,29 @@ class ShowDiscountCodesAPIView(APIView):
         serializer = DiscountCodeSerializer(discount_codes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
+class DeleteDiscountCodeAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def delete(self, request, id):
+        if request.user.role != UserRole.ADMIN:
+            return Response(
+                {"message": "You are not authorized to access this page"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            discount_code = DiscountCode.objects.get(id=id)
+            discount_code.delete()
+            return Response(
+                {"message": "Discount code deleted successfully"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except DiscountCode.DoesNotExist:
+            return Response(
+                {"error": "Discount code not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+            
 class ShowOrderDetailAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
@@ -719,6 +741,8 @@ class ShowOrderDetailAPIView(APIView):
             return Response(
                 {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
 
 class CancelOrderAPIView(APIView):
     permission_classes = [
