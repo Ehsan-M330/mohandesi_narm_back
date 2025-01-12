@@ -64,11 +64,11 @@ class Order(models.Model):
             if self.discount_code:
                 self.total_price = self.apply_discount()
 
-            # اضافه کردن تعداد فروش غذاها به `selled`
+            # اضافه کردن تعداد فروش غذاها به `sold`
             if self.status == OrderStatus.ACCEPTED:
                 for order_item in self.order_items.all():  # type: ignore
                     food = order_item.food
-                    food.selled += order_item.quantity
+                    food.sold += order_item.quantity
                     food.save()
 
         super().save(*args, **kwargs)
@@ -150,7 +150,7 @@ class Food(models.Model):
     image = models.ImageField(upload_to="food_images/", null=True, blank=True,default="food_images/default.jpg")
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
-    selled=models.IntegerField(default=0)
+    sold=models.IntegerField(default=0)
     def __str__(self):
         return self.name
 

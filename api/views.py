@@ -940,7 +940,7 @@ class RateFoodAPIView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ShowMostSelledFoodsListAPIView(APIView):
+class ShowMostsoldFoodsListAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
@@ -953,7 +953,7 @@ class ShowMostSelledFoodsListAPIView(APIView):
             )
         category = self.request.GET.get("category")
         if category:
-            foods = Food.objects.filter(category__name=category).order_by("selled")
+            foods = Food.objects.filter(category__name=category).order_by("sold")
         else:
             foods = Food.objects.all()
 
