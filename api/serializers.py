@@ -213,12 +213,14 @@ class ShowUserCartSerializer(serializers.ModelSerializer):
         }
 
 class ShowOrderSerializer(serializers.ModelSerializer):
-    # به جای ارسال شناسه مشتری، نام آن را برمی‌گردانیم
-    customer = serializers.CharField(source='customer.username', read_only=True)
+    # ارسال شناسه مشتری (id)
+    customer_id = serializers.IntegerField(source='customer.id', read_only=True)
+    # ارسال نام مشتری (username یا نام کامل)
+    customer_name = serializers.CharField(source='customer.username', read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'order_date', 'status', 'total_price', 'created_at', 'updated_at']
+        fields = ['id', 'customer_id', 'customer_name', 'order_date', 'status', 'total_price', 'created_at', 'updated_at']
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
