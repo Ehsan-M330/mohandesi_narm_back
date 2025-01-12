@@ -20,7 +20,7 @@ from api.serializers import RegisterCustomerSerializer
 from api.serializers import AddToCartSerializer
 from api.serializers import ShowOrderSerializer
 from api.serializers import ShowUserCartSerializer
-from main.models import Address, Cart, CartItem, Category, OrderStatus, User
+from main.models import Address, Cart, CartItem, Category, DiscountCode, OrderStatus, User
 from main.models import Food
 from main.models import Order
 from main.models import UserRole
@@ -648,6 +648,22 @@ class CreateDiscountCodeAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ShowDiscountCodesAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        if request.user.role != UserRole.ADMIN:
+            return Response(
+                {"message": "You are not authorized to access this page"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        discount_codes = DiscountCode.objects.all()
+        serializer = DiscountCodeSerializer(discount_codes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
 class ShowOrderDetailAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
