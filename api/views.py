@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from api.serializers import (
     CategorySerializer,
+    CheckDiscountCodeSerializer,
     DiscountCodeSerializer,
     EmployeeSerializer,
     FoodSerializer,
@@ -723,10 +724,9 @@ class CheckDiscountCodeAPIView(APIView):
     ]
 
     def post(self, request):
-        #TODO
         serializer = CheckDiscountCodeSerializer(data=request.data)
         if serializer.is_valid():
-            discount_code = serializer.validated_data["discount_code"]
+            discount_code = serializer.validated_data["discount_code"] # type: ignore
             try:
                 # گرفتن کد تخفیف از دیتابیس
                 discount = DiscountCode.objects.get(code=discount_code)
