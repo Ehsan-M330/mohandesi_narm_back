@@ -29,8 +29,10 @@ from main.models import Order
 from main.models import UserRole
 from django.contrib.auth import authenticate
 from django.core.paginator import Paginator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 
 class LogoutAPIView(APIView):
     def post(self, request):
@@ -729,11 +731,10 @@ class CheckDiscountCodeAPIView(APIView):
         if serializer.is_valid():
             discount_code = serializer.validated_data["code"]  # type: ignore
             try:
-                # گرفتن کد تخفیف از دیتابیس
                 discount = DiscountCode.objects.get(code=discount_code)
 
                 # بررسی زمان انقضا کد تخفیف
-                current_time = datetime.now()
+                current_time = timezone.now()  # استفاده از timezone-aware datetime
                 if discount.expiration_date < current_time:
                     return Response(
                         {"error": "Discount code has expired"},
@@ -747,15 +748,6 @@ class CheckDiscountCodeAPIView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                # بررسی اینکه آیا در نیم ساعت اول می‌توان از کد تخفیف استفاده کرد
-                time_difference = current_time - discount.created_at
-                if time_difference > timedelta(minutes=30):
-                    return Response(
-                        {"error": "Discount code can only be used within 30 minutes of creation."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                # اگر همه شرایط درست بود، اطلاعات کد تخفیف را با استفاده از سریالایزر ارسال می‌کنیم
                 discount_data = ShowDiscountCodeSerializer(discount).data
                 return Response(discount_data, status=status.HTTP_200_OK)
 

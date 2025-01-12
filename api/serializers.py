@@ -286,10 +286,14 @@ class RateFoodSerializer(serializers.Serializer):
             "max_value": "Rate must not exceed 5.",
         },
     )
+    
 class GetDiscountCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscountCode
         fields = ["code"]
+        extra_kwargs = {
+            "code": {"validators": []}  # حذف همه‌ی اعتبارسنج‌ها، از جمله چک یکتایی
+        }
 
 class ShowDiscountCodeSerializer(serializers.ModelSerializer):
     class Meta:
