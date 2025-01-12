@@ -60,7 +60,7 @@ urlpatterns = [
     path("admin/discountcodes/", ShowDiscountCodesAPIView.as_view(), name="show_discount_codes"),
     path("admin/discountcode/delete/<int:id>/", DeleteDiscountCodeAPIView.as_view(), name="delete_discount_code"),
     
-    path("orderdetail/",ShowOrderDetailAPIView.as_view(),name="order_detail"),
+    path("orderdetail/<int:id>/",ShowOrderDetailAPIView.as_view(),name="order_detail"),
     path("cancelorder/",CancelOrderAPIView.as_view(),name="cancel_order"),
     
     

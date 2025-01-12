@@ -185,3 +185,18 @@ class Address(models.Model):
     class Meta:
         verbose_name = "Address"
         verbose_name_plural = "Addresses"
+        
+class Rating(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ratings")
+    food = models.ForeignKey(Food, on_delete=models.CASCADE, related_name="ratings")
+    score = models.IntegerField()  # امتیاز از 1 تا 5
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "food")  # جلوگیری از امتیاز چندباره
+        verbose_name = "Rating"
+        verbose_name_plural = "Ratings"
+
+    def __str__(self):
+        return f"{self.user.username} rated {self.food.name} ({self.score})"

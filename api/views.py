@@ -13,6 +13,7 @@ from api.serializers import (
     GetAddressSerializer,
     GetEmployeeSerializer,
     LoginSerializer,
+    RateFoodSerializer,
     RegisterEmployeeSerializer,
 )
 from api.serializers import AddressSerializer
@@ -20,13 +21,14 @@ from api.serializers import RegisterCustomerSerializer
 from api.serializers import AddToCartSerializer
 from api.serializers import ShowOrderSerializer
 from api.serializers import ShowUserCartSerializer
-from main.models import Address, Cart, CartItem, Category, DiscountCode, OrderStatus, User
+from main.models import Address, Cart, CartItem, Category, DiscountCode, OrderStatus, Rating, User
 from main.models import Food
 from main.models import Order
 from main.models import UserRole
 from django.contrib.auth import authenticate
 from django.core.paginator import Paginator
 from datetime import datetime, timedelta
+from django.db import models
 
 class LogoutAPIView(APIView):
     def post(self, request):
@@ -796,3 +798,52 @@ class CancelOrderAPIView(APIView):
             return Response(
                 {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class RateFoodAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role != UserRole.CUSTOMER:
+            return Response(
+                {"message": "You are not authorized to access this page"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # سریالایزر برای اعتبارسنجی داده‌ها
+        serializer = RateFoodSerializer(data=request.data)
+        if serializer.is_valid():
+            food_id = serializer.validated_data["food_id"] # type: ignore
+            rate = serializer.validated_data["rate"] # type: ignore
+
+            try:
+                # پیدا کردن غذا
+                food = Food.objects.get(id=food_id)
+
+                # بررسی اینکه آیا کاربر قبلاً امتیاز داده است
+                rating, created = Rating.objects.get_or_create(
+                    user=request.user, food=food, defaults={"score": rate}
+                )
+
+                if not created:
+                    # به‌روزرسانی امتیاز در صورت وجود
+                    rating.score = rate
+                    rating.save()
+
+                # محاسبه میانگین امتیاز غذا
+                average_rating = food.ratings.aggregate(models.Avg("score"))["score__avg"] # type: ignore
+                
+                return Response(
+                    {
+                        "message": "Rating submitted successfully",
+                        "rating": rate,
+                        "average_rating": average_rating,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            except Food.DoesNotExist:
+                return Response(
+                    {"error": "Food not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -257,3 +257,16 @@ class DiscountCodeSerializer(serializers.ModelSerializer):
                 },
             },
         }
+        
+class RateFoodSerializer(serializers.Serializer):
+    food_id = serializers.IntegerField(required=True)
+    rate = serializers.IntegerField(
+        required=True,
+        min_value=0,
+        max_value=5,
+        error_messages={
+            "required": "Rate is required.",
+            "min_value": "Rate must not be less than 0.",
+            "max_value": "Rate must not exceed 5.",
+        },
+    )
